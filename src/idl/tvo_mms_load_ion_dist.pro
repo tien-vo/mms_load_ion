@@ -11,11 +11,12 @@
 ;       feeps: Toggle to combine FEEPS distribution into final product
 ;       keep_raw: Toggle to keep raw (unprocessed) variables.
 ;       extrapolate: Toggle to extrapolate the energy gap.
+;       no_reshape: Toggle to keep 3D DF in original FPI shape.
 ;       suffix: Save processed variables with suffix.
 ;       error: 1 = Error during processing, 0 = No error.
 ;−
 pro tvo_mms_load_ion_dist, trange=trange, probe=probe, drate=drate, feeps=feeps, keep_raw=keep_raw, $
-    extrapolate=extrapolate, suffix=suffix, error=error
+    extrapolate=extrapolate, no_reshape=no_reshape, suffix=suffix, error=error
 
 compile_opt idl2
 tvo_mms_init, debug=-1
@@ -172,6 +173,8 @@ if idx[0] ne -1 then for it = 0, Nt - 1 do for ip = 0, Np - 1 do begin
     _f3d[idx] = !values.d_nan
     f3d[*, *, it, ip] = _f3d
 endfor
+
+; Recalculate f1d_omni
 f1d_omni = total(total(0.5d * V^4 * f3d * sin(theta), 4, /nan, /double), 3, /nan, /double) / Omega  ; cm-2 s-1 sr-1
 
 if defined(feeps) then begin
@@ -251,9 +254,20 @@ options, out_f1d_omni_name + suffix, $
     ztitle='(cm!U-2!N s!U-1!N sr!U-1!N)', $
     databar={yval: [W_fpi_thresh, W_feeps_thresh], color: [1, 1], linestyle: 2, thick: 2}
 if fpi_drate eq 'brst' then phi_save = phi[*, 0, 0, *] else phi_save = phi[0, 0, 0, *]
-store_data, out_f3d_name + suffix, $
-    data={x: t_fpi, y: f3d, v1: reform(W[*, *, 0, 0]), v2: reform(theta[0, 0, *, 0]), v3: reform(phi_save)}, $
-    dlim=dlim
+if defined(no_reshape) then $
+    save_data = { $
+        x: t_fpi, $
+        y: transpose(f3d, [0, 3, 2, 1]), $
+        v1: reform(phi_save), $
+        v2: reform(theta[0, 0, *, 0]), $
+        v3: reform(W[*, *, 0, 0])} else $
+    save_data = { $
+        x: t_fpi, $
+        y: f3d, $
+        v1: reform(W[*, *, 0, 0]), $
+        v2: reform(theta[0, 0, *, 0]), $
+        v3: reform(phi_save)}
+store_data, out_f3d_name + suffix, data=save_data, dlim=dlim
 ; ----
 
 end
