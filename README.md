@@ -25,6 +25,7 @@ KEYWORDS:
       feeps: Toggle to combine FEEPS distribution into final product
       keep_raw: Toggle to keep raw (unprocessed) variables.
       extrapolate: Toggle to extrapolate the energy gap.
+      no_reshape: Toggle to keep 3D DF in original FPI shape.
       suffix: Save processed variables with suffix.
       error: 1 = Error during processing, 0 = No error.
 ```
